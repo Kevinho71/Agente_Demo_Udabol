@@ -1,0 +1,176 @@
+{
+  "version": 1,
+  "api": {
+    "name": "Catálogo de Productos",
+    "description": "Servicio backend conectado a PostgreSQL en Supabase",
+    "baseUrlEnv": "EXTERNAL_API_BASE_URL",
+    "docsUrl": "https://appproyectoproducto.onrender.com/docs"
+  },
+  "definitions": {
+    "Product": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "integer" },
+        "name": { "type": "string" },
+        "price": { "type": "number" },
+        "stock": { "type": "integer" },
+        "image_url": { "type": ["string", "null"] }
+      },
+      "required": ["id", "name", "price", "stock"]
+    },
+    "ProductCreate": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "maxLength": 120 },
+        "price": { "type": "number", "minimum": 0 },
+        "stock": { "type": "integer", "minimum": 0 },
+        "image_url": { "type": ["string", "null"] }
+      },
+      "required": ["name", "price", "stock"]
+    }
+  },
+  "endpoints": [
+    {
+      "id": "list_products",
+      "method": "GET",
+      "path": "/api/v1/products",
+      "summary": "Lista el catálogo completo de productos",
+      "description": "Devuelve todos los productos registrados con id, name, price, stock e image_url. La API externa no admite filtros, orden ni paginación: el backend aplica esos parámetros localmente sobre la lista completa y la tabla de la interfaz muestra exactamente el subconjunto resultante.",
+      "effects": "read",
+      "enabled": true,
+      "params": [
+        {
+          "name": "sort_by",
+          "in": "local",
+          "required": false,
+          "type": "string",
+          "enum": ["price", "stock", "name"],
+          "description": "Campo por el que se ordenan los productos. Usalo junto con order y limit para rankings (por ejemplo, top 10 más baratos)."
+        },
+        {
+          "name": "order",
+          "in": "local",
+          "required": false,
+          "type": "string",
+          "enum": ["asc", "desc"],
+          "description": "Dirección del orden: asc para menor a mayor, desc para mayor a menor."
+        },
+        {
+          "name": "limit",
+          "in": "local",
+          "required": false,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50,
+          "description": "Cantidad máxima de productos a devolver. Con limit 1 y sort_by se muestran los empates del primer valor."
+        },
+        {
+          "name": "name_contains",
+          "in": "local",
+          "required": false,
+          "type": "string",
+          "maxLength": 120,
+          "description": "Filtra por coincidencia parcial en el nombre, sin distinguir mayúsculas. Usalo para buscar un producto."
+        },
+        {
+          "name": "min_price",
+          "in": "local",
+          "required": false,
+          "type": "number",
+          "minimum": 0,
+          "description": "Precio mínimo, inclusive."
+        },
+        {
+          "name": "max_price",
+          "in": "local",
+          "required": false,
+          "type": "number",
+          "minimum": 0,
+          "description": "Precio máximo, inclusive."
+        },
+        {
+          "name": "min_stock",
+          "in": "local",
+          "required": false,
+          "type": "integer",
+          "minimum": 0,
+          "description": "Stock mínimo, inclusive."
+        },
+        {
+          "name": "max_stock",
+          "in": "local",
+          "required": false,
+          "type": "integer",
+          "minimum": 0,
+          "description": "Stock máximo, inclusive. Para 'stock menor a 5' usa max_stock 4."
+        },
+        {
+          "name": "show_table",
+          "in": "local",
+          "required": false,
+          "type": "boolean",
+          "description": "Controla si la interfaz muestra la tabla de productos. Pon false cuando la respuesta sea solo un total, un conteo o un valor agregado."
+        }
+      ],
+      "response": {
+        "type": "array",
+        "items": { "$ref": "#/definitions/Product" }
+      },
+      "examples": [
+        "¿Qué productos hay en el catálogo?",
+        "Muéstrame los 3 más caros",
+        "¿Qué productos tienen stock menor a 5?",
+        "¿Cuánto vale todo el inventario?"
+      ]
+    },
+    {
+      "id": "create_product",
+      "method": "POST",
+      "path": "/api/v1/products",
+      "summary": "Crea un producto en el catálogo",
+      "description": "Crea un producto nuevo con name, price, stock e image_url opcional. La interfaz pide confirmación explícita antes de ejecutar la escritura. Si el usuario pide crear varios productos, llama a esta acción una vez por producto en el mismo turno: la interfaz las agrupa en una sola confirmación. No la uses para editar ni borrar: esas acciones no existen.",
+      "effects": "write",
+      "confirm": true,
+      "enabled": true,
+      "params": [
+        {
+          "name": "name",
+          "in": "body",
+          "required": true,
+          "type": "string",
+          "maxLength": 120,
+          "description": "Nombre del producto."
+        },
+        {
+          "name": "price",
+          "in": "body",
+          "required": true,
+          "type": "number",
+          "minimum": 0,
+          "description": "Precio del producto, sin símbolo de moneda."
+        },
+        {
+          "name": "stock",
+          "in": "body",
+          "required": true,
+          "type": "integer",
+          "minimum": 0,
+          "description": "Unidades disponibles en stock."
+        },
+        {
+          "name": "image_url",
+          "in": "body",
+          "required": false,
+          "type": "string",
+          "nullable": true,
+          "description": "URL de imagen del producto. Opcional; si no se indica, se envía null."
+        }
+      ],
+      "response": { "$ref": "#/definitions/Product" },
+      "examples": [
+        "Crea un producto llamado Monitor 24 con precio 145 y stock 15",
+        "Agrega al catálogo un teclado mecánico de 300 con 8 unidades"
+      ]
+    }
+  ]
+}

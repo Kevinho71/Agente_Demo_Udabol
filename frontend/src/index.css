@@ -1,0 +1,282 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Marco y superficies */
+  --ground: #dce7e8;
+  --surface: #f7faf9;
+  --raised: #e4efee;
+  --active: #d2e3e2;
+  --hairline: #cfdbda;
+  --rule: #e0eae8;
+  --control: #b4c5c6;
+  --masthead: #0d4650;
+  --title-band: #e6f0ef;
+  --rail: #e9f1f0;
+
+  /* Tinta */
+  --ink: #12232a;
+  --ink-soft: #4d6165;
+  --ink-faint: #56696d;
+
+  /* Acento principal: teal */
+  --brand: #146b7a;
+  --brand-soft: #d9eaea;
+  --brand-ink: #0b3a43;
+  --brand-deep: #0b3a43;
+
+  /* Estados */
+  --positive: #1f6b4a;
+  --positive-soft: #dcf3e6;
+  --positive-ink: #0a3a26;
+  --negative: #a3343c;
+  --negative-soft: #f8e2e2;
+  --negative-ink: #6e1b22;
+  --warning: #7a4c0e;
+  --warning-soft: #fdf3dc;
+  --warning-border: #e6c98b;
+  --warning-ink: #7a4c0e;
+  --masthead-positive: #7fe0ad;
+  --masthead-negative: #ffb0b0;
+  --masthead-muted: #9fb3b6;
+
+  /* Tokens de shadcn/ui */
+  --background: #f7faf9;
+  --foreground: #12232a;
+  --card: #ffffff;
+  --card-foreground: #12232a;
+  --popover: #f7faf9;
+  --popover-foreground: #12232a;
+  --primary: #0d4650;
+  --primary-foreground: #ffffff;
+  --secondary: #e4efee;
+  --secondary-foreground: #12232a;
+  --muted: #e4efee;
+  --muted-foreground: #4d6165;
+  --accent: #d9eaea;
+  --accent-foreground: #12232a;
+  --destructive: #a3343c;
+  --destructive-foreground: #ffffff;
+  --border: #cfdbda;
+  --input: #b4c5c6;
+  --ring: #146b7a;
+  --chart-1: #146b7a;
+  --chart-2: #2f5d8a;
+  --chart-3: #a86f0c;
+  --chart-4: #1f6b4a;
+  --chart-5: #4d6165;
+  --radius: 8px;
+}
+
+@theme inline {
+  --color-ground: var(--ground);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-active: var(--active);
+  --color-hairline: var(--hairline);
+  --color-rule: var(--rule);
+  --color-control: var(--control);
+  --color-masthead: var(--masthead);
+  --color-title-band: var(--title-band);
+  --color-rail: var(--rail);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
+  --color-brand: var(--brand);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-deep: var(--brand-deep);
+  --color-positive: var(--positive);
+  --color-negative: var(--negative);
+  --color-warning: var(--warning);
+  --color-positive-soft: var(--positive-soft);
+  --color-positive-ink: var(--positive-ink);
+  --color-negative-soft: var(--negative-soft);
+  --color-negative-ink: var(--negative-ink);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-border: var(--warning-border);
+  --color-warning-ink: var(--warning-ink);
+  --color-masthead-positive: var(--masthead-positive);
+  --color-masthead-negative: var(--masthead-negative);
+  --color-masthead-muted: var(--masthead-muted);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  html {
+    height: 100%;
+  }
+
+  body {
+    height: 100%;
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  #root {
+    height: 100%;
+  }
+
+  ::selection {
+    background: var(--brand);
+    color: #ffffff;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+  }
+
+  button,
+  a,
+  textarea,
+  input {
+    font: inherit;
+  }
+
+  textarea {
+    field-sizing: content;
+  }
+}
+
+@layer utilities {
+  .numeric {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--control) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: var(--control);
+    border-radius: 999px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scroll-fade-b {
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 24px), transparent 100%);
+  }
+}
+
+/* Markdown de las respuestas */
+.answer-md > * + * {
+  margin-top: 0.7em;
+}
+
+.answer-md p {
+  margin: 0;
+}
+
+.answer-md ul,
+.answer-md ol {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+
+.answer-md ul {
+  list-style: disc;
+}
+
+.answer-md ol {
+  list-style: decimal;
+}
+
+.answer-md li + li {
+  margin-top: 0.25rem;
+}
+
+.answer-md li::marker {
+  color: var(--ink-faint);
+}
+
+.answer-md strong {
+  font-weight: 600;
+}
+
+.answer-md code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: var(--raised);
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
+  padding: 0.05rem 0.3rem;
+}
+
+.answer-md table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.answer-md th {
+  text-align: left;
+  font-weight: 500;
+  color: var(--ink-soft);
+  padding: 6px 10px 6px 0;
+  border-bottom: 1px solid var(--hairline);
+  white-space: nowrap;
+}
+
+.answer-md td {
+  padding: 7px 10px 7px 0;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+
+.answer-md th:last-child,
+.answer-md td:last-child {
+  padding-right: 0;
+}

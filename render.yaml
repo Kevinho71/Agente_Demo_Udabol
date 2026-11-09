@@ -1,0 +1,44 @@
+﻿services:
+  - type: web
+    name: agente-demo-api
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: EXTERNAL_API_BASE_URL
+        value: https://appproyectoproducto.onrender.com
+      - key: EXTERNAL_API_TIMEOUT_MS
+        value: "60000"
+      - key: EXTERNAL_API_WARMUP
+        value: "true"
+      - key: GEMINI_MODEL
+        value: gemini-3.5-flash-lite
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        value: https://agente-demo-web.onrender.com
+      - key: RATE_LIMIT_MAX
+        value: "10"
+      - key: WRITE_RATE_LIMIT_MAX
+        value: "5"
+      - key: MOCK_LLM
+        value: "false"
+
+  - type: web
+    name: agente-demo-web
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm ci --include=dev && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://agente-demo-api.onrender.com
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
