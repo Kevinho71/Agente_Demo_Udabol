@@ -22,3 +22,6 @@ npm-debug.log*
 # Sistema
 .DS_Store
 Thumbs.db
+
+# Material de charla (no versionar)
+charla-agentes-ia-*.md

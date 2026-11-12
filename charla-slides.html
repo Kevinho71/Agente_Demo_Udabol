@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Desmitificando a los agentes de IA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,300..800&family=Martian+Mono:wght@300;400;500;700&display=swap" rel="stylesheet" />
+<style>
+/* Concepto: charla técnica tipográfica. Sin tarjetas flotantes; la estructura la dan
+   la escala de texto, las líneas finas y tres momentos de color (azul cobalto, tinta, papel).
+   El elemento memorable es el bucle circular de la slide 8. */
+:root{
+  --paper:#EEF1F4;
+  --ink:#0E1A2B;
+  --muted:#586577;
+  --blue:#2B45FF;
+  --signal:#FFC83D;
+  --warn:#9A4608;
+  --bad:#C0281F;
+  --panel:#FFFFFF;
+
+  --bg:var(--paper);
+  --fg:var(--ink);
+  --fg2:var(--muted);
+  --ln:rgba(14,26,43,.18);
+  --ac:var(--blue);
+
+  --display:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"Martian Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --gx:clamp(24px,6.5vw,112px);
+
+  --rail-fg:var(--ink);
+  --bar:var(--blue);
+}
+body[data-theme="ink"],body[data-theme="blue"]{--rail-fg:#FFFFFF;--bar:var(--signal)}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--paper);color:var(--ink);font-family:var(--display);font-optical-sizing:auto;overflow:hidden;-webkit-font-smoothing:antialiased}
+:focus-visible{outline:3px solid var(--ac);outline-offset:3px}
+
+/* ---------- Chrome ---------- */
+.rail{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;justify-content:space-between;gap:24px;padding:22px var(--gx);font-size:15px;color:var(--rail-fg);pointer-events:none}
+.rail span{opacity:.72}
+.rail .sec{margin-left:auto;margin-right:20px;opacity:1;font-weight:600}
+.rail .cnt{font-variant-numeric:tabular-nums}
+body.is-cover #railTitle{visibility:hidden}
+#bar{position:fixed;left:0;bottom:0;height:4px;width:0;background:var(--bar);z-index:60;transition:width .4s ease}
+.navbtns{position:fixed;right:var(--gx);bottom:24px;z-index:60;display:flex;gap:8px}
+.navbtns button{width:46px;height:46px;border:1px solid currentColor;background:transparent;color:var(--rail-fg);cursor:pointer;display:grid;place-items:center;border-radius:50%;opacity:.8;transition:opacity .2s,background .2s,color .2s}
+.navbtns button:hover{opacity:1;background:var(--rail-fg);color:var(--paper)}
+body[data-theme="ink"] .navbtns button:hover,body[data-theme="blue"] .navbtns button:hover{color:var(--ink)}
+.navbtns svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* ---------- Slides ---------- */
+.slide{position:absolute;inset:0;background:var(--bg);color:var(--fg);padding:104px var(--gx) 92px;display:flex;flex-direction:column;justify-content:center;overflow-y:auto;opacity:0;visibility:hidden;transition:opacity .28s ease,visibility 0s linear .28s}
+.slide.active{opacity:1;visibility:visible;transition:opacity .28s ease}
+.slide[data-theme="ink"]{--bg:var(--ink);--fg:#EEF1F4;--fg2:#A3B0C2;--ln:rgba(238,241,244,.22);--ac:var(--signal)}
+.slide[data-theme="blue"]{--bg:var(--blue);--fg:#FFFFFF;--fg2:rgba(255,255,255,.8);--ln:rgba(255,255,255,.32);--ac:var(--signal)}
+
+h1,h2{font-family:var(--display);font-weight:700;font-stretch:78%;letter-spacing:-.025em;line-height:.93;text-wrap:balance}
+h1{font-size:clamp(54px,11vw,170px)}
+h2{font-size:clamp(36px,6vw,92px)}
+h2.m{font-size:clamp(34px,5vw,76px)}
+.lede{font-size:clamp(18px,1.8vw,26px);line-height:1.4;color:var(--fg2);max-width:30em;margin-top:26px;text-wrap:pretty}
+.note{font-size:clamp(15px,1.3vw,18px);color:var(--fg2);margin-top:28px;max-width:34em;line-height:1.45}
+.soft{color:var(--fg2);font-weight:400}
+.accent{color:var(--ac)}
+.mono{font-family:var(--mono)}
+
+.split{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:clamp(32px,5vw,88px);align-items:center}
+.stack>.body{margin-top:clamp(28px,5vh,56px)}
+@media(max-width:860px){.split{grid-template-columns:1fr}}
+
+/* reveal de línea (solo portada, mantra y cierre) */
+.ln{display:block;overflow:hidden;padding-bottom:.22em;margin-bottom:-.22em}
+.ln>span{display:block}
+.slide.active .ln>span{animation:up .9s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--k,0)*.12s)}
+@keyframes up{from{transform:translateY(108%)}to{transform:none}}
+
+/* ---------- Código ---------- */
+.code{font-family:var(--mono);font-size:clamp(12.5px,1.2vw,16.5px);line-height:1.75;background:color-mix(in srgb,var(--fg) 6%,transparent);border-left:3px solid var(--ac);padding:22px 26px;white-space:pre;overflow-x:auto;text-align:left}
+.code .k{color:var(--ac);font-weight:500}
+.code .s{font-weight:500}
+.code .c{color:var(--fg2)}
+.code b{font-weight:500;color:var(--ac)}
+
+/* ---------- Filas con línea ---------- */
+.rows{list-style:none;border-bottom:1px solid var(--ln)}
+.rows li{display:grid;grid-template-columns:clamp(44px,5vw,72px) minmax(0,1fr);gap:8px;padding:clamp(16px,2.4vh,26px) 0;border-top:1px solid var(--ln);align-items:baseline}
+.rows .n{font-size:clamp(28px,3vw,44px);font-weight:700;font-stretch:80%;color:var(--ac);font-variant-numeric:tabular-nums}
+.rows b{display:block;font-size:clamp(22px,2.4vw,34px);font-weight:650;letter-spacing:-.01em}
+.rows span.d{display:block;color:var(--fg2);font-size:clamp(15px,1.4vw,19px);margin-top:4px;line-height:1.4}
+
+.cols{display:grid;gap:clamp(24px,3vw,56px)}
+.cols.c4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.cols.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.cols.c2{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.cols>div{border-top:3px solid var(--fg);padding-top:18px}
+.cols .n{font-size:15px;font-weight:700;color:var(--ac);font-variant-numeric:tabular-nums}
+.cols h3{font-size:clamp(22px,2.3vw,34px);font-weight:650;letter-spacing:-.01em;margin:8px 0 10px;line-height:1.05}
+.cols p{color:var(--fg2);font-size:clamp(15px,1.4vw,19px);line-height:1.45}
+@media(max-width:860px){.cols.c4,.cols.c3,.cols.c2{grid-template-columns:1fr}}
+
+/* ---------- Slide 4: mito / realidad ---------- */
+.vs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.vs>div{padding:0 clamp(16px,3vw,48px)}
+.vs>div:first-child{padding-left:0;border-right:1px solid var(--ln)}
+.vs .lbl{font-size:16px;font-weight:700}
+.vs .big{font-size:clamp(28px,3.6vw,54px);font-weight:700;font-stretch:82%;line-height:1;letter-spacing:-.02em;margin:14px 0 16px;text-wrap:balance}
+.vs .big.no{text-decoration:line-through;text-decoration-thickness:.07em;text-decoration-color:var(--bad);color:var(--fg2);font-weight:500}
+.vs p{color:var(--fg2);font-size:clamp(15px,1.4vw,19px);line-height:1.45;max-width:22em}
+@media(max-width:760px){.vs{grid-template-columns:1fr;gap:32px}.vs>div{padding:0}.vs>div:first-child{border-right:0}}
+
+/* ---------- Slide 5: tokens ---------- */
+.prompt{font-family:var(--mono);font-size:clamp(14px,1.4vw,19px);color:var(--fg2);margin-bottom:16px}
+.tok{display:flex;flex-wrap:wrap;gap:6px;font-family:var(--mono);font-size:clamp(18px,2.4vw,36px);font-weight:500}
+.tok span{padding:4px 10px;background:color-mix(in srgb,var(--ac) 16%,transparent);opacity:0}
+.slide.active .tok span{animation:tk .01s forwards;animation-delay:calc(var(--k)*.3s + .5s)}
+@keyframes tk{to{opacity:1}}
+
+/* ---------- Slide 6 ---------- */
+.call{display:grid;gap:0}
+.call h3{font-size:16px;font-weight:700;margin-bottom:12px}
+.call .code{font-size:clamp(13px,1.35vw,18px)}
+
+/* ---------- Slide 8: bucle ---------- */
+.loopwrap{display:grid;place-items:center}
+.loop{width:min(100%,600px);max-height:74vh;height:auto;overflow:visible}
+.loop .track{fill:none;stroke:var(--fg);stroke-opacity:.2;stroke-width:2}
+.loop .stage{animation:stage 8s linear infinite}
+.loop .stage circle{fill:var(--bg);stroke:var(--fg);stroke-width:2.5}
+.loop .stage text{font-family:var(--display);font-size:30px;font-weight:650;fill:var(--fg);font-stretch:85%}
+.loop .center{font-family:var(--display);font-size:22px;fill:var(--fg2);text-anchor:middle}
+.loop .dot{fill:var(--ac)}
+.loop .halo{fill:var(--ac);opacity:.25}
+@keyframes stage{0%{opacity:1}14%{opacity:1}30%{opacity:.35}88%{opacity:.35}100%{opacity:1}}
+
+/* ---------- Slide 9: secuencia ---------- */
+.seq{width:100%;max-width:980px;height:auto;max-height:46vh;overflow:visible}
+.seq .life{stroke:var(--fg);stroke-opacity:.35;stroke-width:1.5;stroke-dasharray:3 6}
+.seq .zone{fill:var(--ac);opacity:.09}
+.seq .ar{stroke:var(--ac);stroke-width:3;fill:none;marker-end:url(#ah)}
+.seq .act{fill:var(--ac)}
+.seq .head{font-family:var(--display);font-size:26px;font-weight:700;fill:var(--fg)}
+.seq .t{font-family:var(--display);font-size:24px;font-weight:650;fill:var(--fg)}
+.seq .m{font-family:var(--mono);font-size:14px;fill:var(--fg2)}
+#ah path{fill:var(--ac)}
+
+/* ---------- Slide 12: traza ---------- */
+.log{border-bottom:1px solid var(--ln)}
+.log>div{display:grid;grid-template-columns:clamp(110px,14vw,190px) minmax(0,1fr);gap:16px;padding:clamp(12px,2vh,20px) 0;border-top:1px solid var(--ln);align-items:baseline}
+.log .who{font-size:15px;font-weight:600;color:var(--fg2)}
+.log .tx{font-size:clamp(18px,2vw,28px)}
+.log .tx code{font-family:var(--mono);font-size:.78em;color:var(--ac);font-weight:500}
+.log .final .tx{font-size:clamp(34px,4.6vw,68px);font-weight:700;font-stretch:80%;letter-spacing:-.02em;line-height:1}
+@media(max-width:600px){.log>div{grid-template-columns:1fr;gap:2px}}
+
+/* ---------- Slide 13: url ---------- */
+.url{font-family:var(--mono);font-size:clamp(15px,1.9vw,26px);font-weight:500;margin-top:36px;padding-bottom:10px;border-bottom:3px solid var(--ac);display:inline-block;max-width:100%;overflow-wrap:anywhere}
+
+/* ---------- Slide 14: dónde vive ---------- */
+.where{border-bottom:1px solid var(--ln)}
+.where>div{display:flex;justify-content:space-between;align-items:baseline;gap:20px;padding:clamp(8px,1.6vh,18px) 0;border-top:1px solid var(--ln)}
+.where .w{font-size:clamp(38px,6.6vw,100px);font-weight:700;font-stretch:78%;letter-spacing:-.03em;line-height:1}
+.where .st{font-size:clamp(20px,2.4vw,34px);font-weight:700}
+.where .yes .st{color:var(--ac)}
+.where .no .w{color:var(--fg2);font-weight:500;text-decoration:line-through;text-decoration-thickness:.06em}
+.where .no .st{color:var(--warn)}
+.where .never .w{color:var(--fg2);font-weight:500;text-decoration:line-through;text-decoration-thickness:.06em;text-decoration-color:var(--bad)}
+.where .never .st{color:var(--bad)}
+
+/* ---------- Slide 15: chat ---------- */
+.asks{margin-top:34px;border-bottom:1px solid var(--ln)}
+.asks button{display:block;width:100%;text-align:left;font:inherit;font-size:clamp(17px,1.6vw,22px);font-weight:500;padding:14px 0;border:0;border-top:1px solid var(--ln);background:none;color:var(--fg);cursor:pointer;transition:color .2s,padding .2s}
+.asks button:hover:not(:disabled){color:var(--ac);padding-left:8px}
+.asks button:disabled{opacity:.45;cursor:default}
+.chat{background:var(--panel);border:1px solid var(--ln);border-radius:8px;display:flex;flex-direction:column;height:min(68vh,580px);min-width:0}
+.chat-head{display:flex;justify-content:space-between;gap:12px;align-items:baseline;padding:14px 20px;border-bottom:1px solid var(--ln);font-size:15px;font-weight:600}
+.chat-head span{font-family:var(--mono);font-size:12px;font-weight:400;color:var(--muted)}
+.chat-body{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:18px}
+.msg{animation:pop .3s ease;font-size:16px;line-height:1.5}
+.msg.user{align-self:flex-end;max-width:85%;background:var(--ink);color:#fff;padding:10px 15px;border-radius:14px 14px 3px 14px}
+.msg.ai{align-self:stretch;color:var(--ink)}
+.msg .trace{display:block;font-family:var(--mono);font-size:12px;color:var(--blue);margin-bottom:6px}
+.msg table{margin-top:12px}
+.typing{align-self:flex-start;display:flex;gap:5px;padding:6px 0}
+.typing i{width:7px;height:7px;border-radius:50%;background:var(--blue);animation:blink 1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes blink{0%,80%,100%{opacity:.25}40%{opacity:1}}
+@keyframes pop{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+table{width:100%;border-collapse:collapse;font-size:15px;font-variant-numeric:tabular-nums}
+th{text-align:left;font-weight:600;color:var(--muted);padding:8px 10px 8px 0;border-bottom:1.5px solid currentColor}
+td{padding:9px 10px 9px 0;border-bottom:1px solid rgba(14,26,43,.14)}
+tr:last-child td{border-bottom:0}
+
+/* ---------- Slide 16: escalera ---------- */
+.stair{display:grid;gap:8px}
+.band{margin-left:calc(var(--i)*clamp(12px,4.5vw,72px));display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) minmax(0,2.6fr);gap:20px;align-items:baseline;padding:clamp(14px,2.2vh,24px) 26px}
+.band b{font-size:clamp(22px,2.6vw,38px);font-weight:700;font-stretch:84%;letter-spacing:-.015em}
+.band .tech{font-family:var(--mono);font-size:clamp(12px,1.1vw,15px);opacity:.78}
+.band p{font-size:clamp(14px,1.35vw,19px);line-height:1.4}
+.band.b0{background:color-mix(in srgb,var(--blue) 6%,transparent)}
+.band.b1{background:color-mix(in srgb,var(--blue) 12%,transparent)}
+.band.b2{background:color-mix(in srgb,var(--blue) 22%,transparent)}
+.band.b3{background:var(--ink);color:var(--paper)}
+@media(max-width:760px){.band{grid-template-columns:1fr;gap:4px}}
+
+/* ---------- Slide 17: mapa ---------- */
+.map{border-bottom:1px solid var(--ln)}
+.map>div{display:grid;grid-template-columns:minmax(0,1fr) clamp(48px,8vw,120px) minmax(0,1fr);align-items:center;gap:8px;padding:clamp(18px,3vh,32px) 0;border-top:1px solid var(--ln)}
+.map .code{font-size:clamp(13px,1.5vw,21px);padding:16px 20px}
+.map .arr{height:2px;background:var(--fg);position:relative}
+.map .arr::after{content:"";position:absolute;right:0;top:-5px;width:10px;height:10px;border-top:2px solid var(--fg);border-right:2px solid var(--fg);transform:rotate(45deg)}
+.map .tool{font-family:var(--mono);font-size:clamp(18px,2.4vw,34px);font-weight:700;color:var(--ac);overflow-wrap:anywhere}
+.map small{display:block;font-family:var(--display);font-size:clamp(14px,1.2vw,17px);color:var(--fg2);margin-top:6px;font-weight:400}
+@media(max-width:760px){.map>div{grid-template-columns:1fr}.map .arr{display:none}}
+
+/* ---------- Slide 18: frase → parámetros ---------- */
+mark{color:inherit;padding:.02em .18em;margin:0 -.04em}
+mark.m1{background:var(--signal)}
+mark.m2{background:#B9C3FF}
+.speak{display:grid;gap:clamp(20px,4vh,40px)}
+.speak .ph{font-size:clamp(30px,4.6vw,70px);font-weight:700;font-stretch:80%;letter-spacing:-.02em;line-height:1.05}
+.speak .pm{font-family:var(--mono);font-size:clamp(13px,1.4vw,19px);margin-top:12px;display:flex;flex-wrap:wrap;gap:8px}
+
+/* ---------- Slide 19: confirmación ---------- */
+.dialog{background:var(--panel);border:1px solid var(--ln);border-radius:8px;padding:clamp(22px,3vw,36px);max-width:470px;width:100%;justify-self:start}
+.dialog h3{font-size:22px;font-weight:700;margin-bottom:18px}
+.dialog dl{display:grid;grid-template-columns:auto 1fr;gap:10px 28px;padding:16px 0;border-top:1px solid var(--ln);border-bottom:1px solid var(--ln);margin-bottom:22px}
+.dialog dt{color:var(--muted);font-size:15px}
+.dialog dd{font-size:17px;font-weight:600;font-variant-numeric:tabular-nums}
+.dialog .acts{display:flex;gap:12px}
+.dialog button{font:inherit;font-size:16px;font-weight:600;padding:12px 22px;border-radius:6px;cursor:pointer;border:1.5px solid var(--ink);transition:background .2s,color .2s}
+.dialog .cancel{background:transparent;color:var(--ink)}
+.dialog .cancel:hover{background:rgba(14,26,43,.08)}
+.dialog .ok{background:var(--ink);color:#fff}
+.dialog .ok:hover{background:var(--blue);border-color:var(--blue)}
+.dialog .res{min-height:1.5em;margin-top:16px;font-family:var(--mono);font-size:13px;color:var(--blue)}
+
+/* ---------- Slide 20: tabla ---------- */
+.tbl{max-width:880px}
+.tbl .q{font-family:var(--mono);font-size:clamp(13px,1.3vw,17px);color:var(--ac);margin-bottom:12px}
+.tbl table{font-size:clamp(16px,1.7vw,24px)}
+.tbl th{border-bottom-color:var(--fg);color:var(--fg2);font-size:.75em}
+.tbl td{border-bottom-color:var(--ln);padding:12px 12px 12px 0}
+
+/* ---------- Cierre ---------- */
+.hero{font-size:clamp(46px,9.4vw,152px);line-height:.92;font-weight:300;font-stretch:78%;letter-spacing:-.03em}
+.hero b{font-weight:800}
+.closing-url{font-family:var(--mono);font-size:clamp(14px,1.7vw,24px);color:var(--ac);margin-top:34px}
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .tok span{opacity:1!important}
+}
+</style>
+</head>
+<body data-theme="paper">
+
+<header class="rail">
+  <span id="railTitle">Desmitificando a los agentes de IA</span>
+  <span class="sec" id="sec"></span>
+  <span class="cnt" id="counter">1 / 22</span>
+</header>
+<div id="bar"></div>
+<div class="navbtns">
+  <button id="prev" aria-label="Slide anterior"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+  <button id="next" aria-label="Slide siguiente"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+</div>
+
+<main id="deck">
+
+<!-- 1 PORTADA -->
+<section class="slide active" data-section="" style="justify-content:flex-end;padding-bottom:clamp(88px,14vh,140px)">
+  <h1>
+    <span class="ln"><span style="--k:0">Desmitificando</span></span>
+    <span class="ln"><span style="--k:1">a los agentes</span></span>
+    <span class="ln"><span style="--k:2">de IA</span></span>
+  </h1>
+  <p class="lede" style="margin-top:34px">De cero a un agente que consulta tu API.</p>
+  <p class="note" style="margin-top:44px;display:flex;flex-wrap:wrap;gap:6px 36px;max-width:none">
+    <span style="color:var(--ink);font-weight:600">Kevin Guzmán</span>
+    <span>Charla técnica de 80 minutos</span>
+    <span>Node, Express y Gemini function calling</span>
+  </p>
+</section>
+
+<!-- 2 GANCHO -->
+<section class="slide" data-section="Apertura">
+  <h2 style="font-size:clamp(40px,7.6vw,122px)">Vamos a hacer que una IA consulte tus datos <span class="accent">sin tocar tu base de datos.</span></h2>
+  <p class="note" style="margin-top:44px">La IA habla con la API que ya expusieron.</p>
+</section>
+
+<!-- 3 MAPA DE RUTA -->
+<section class="slide stack" data-section="Apertura">
+  <h2 class="m" style="max-width:14em">De los fundamentos a un agente funcionando</h2>
+  <div class="body cols c4">
+    <div><span class="n">1</span><h3>Entender</h3><p>Qué es realmente un agente de IA</p></div>
+    <div><span class="n">2</span><h3>API key</h3><p>Tu key gratis en Google AI Studio</p></div>
+    <div><span class="n">3</span><h3>Demo</h3><p>Un agente consultando una API real</p></div>
+    <div><span class="n">4</span><h3>Inspiración</h3><p>La parte difícil ya la tienes</p></div>
+  </div>
+</section>
+
+<!-- 4 MITO / REALIDAD -->
+<section class="slide stack" data-section="Entender">
+  <h2>Un agente de IA no es magia.</h2>
+  <div class="body vs">
+    <div>
+      <span class="lbl" style="color:var(--bad)">Mito</span>
+      <div class="big no">Piensa y actúa solo</div>
+      <p>Una entidad con voluntad propia que decide y ejecuta.</p>
+    </div>
+    <div>
+      <span class="lbl accent">Realidad</span>
+      <div class="big">Propone; tu código controla</div>
+      <p>Un bucle de código que usa un modelo que devuelve texto.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 5 TEXTO ENTRA / SALE -->
+<section class="slide stack" data-section="Entender">
+  <h2>Texto entra. Texto sale.</h2>
+  <p class="lede">Un modelo de lenguaje (LLM) es una función probabilística: recibe texto y devuelve texto. Nada más.</p>
+  <div class="body">
+    <p class="prompt">entra: ¿Cuál es la capital de Bolivia?</p>
+    <div class="tok" aria-label="Sucre es la capital constitucional de Bolivia.">
+      <span style="--k:0">Sucre</span><span style="--k:1">es</span><span style="--k:2">la</span><span style="--k:3">capital</span><span style="--k:4">constitu</span><span style="--k:5">cional</span><span style="--k:6">de</span><span style="--k:7">Bolivia</span><span style="--k:8">.</span>
+    </div>
+    <p class="note">Predice el siguiente token, una y otra vez.</p>
+  </div>
+</section>
+
+<!-- 6 STATELESS -->
+<section class="slide stack" data-section="Entender">
+  <h2>Cada llamada empieza de cero.</h2>
+  <p class="lede">El modelo no conserva el turno anterior. No hay una sesión viviendo en el servidor.</p>
+  <div class="body cols c2" style="gap:clamp(20px,3vw,48px)">
+    <div class="call" style="border-top:0;padding-top:0">
+      <h3>Llamada 1</h3>
+      <div class="code">usuario   Me llamo Kevin.
+modelo    Mucho gusto, Kevin.</div>
+    </div>
+    <div class="call" style="border-top:0;padding-top:0">
+      <h3>Llamada 2</h3>
+      <div class="code">usuario   ¿Cómo me llamo?
+modelo    No tengo esa información.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 7 ILUSIÓN DE MEMORIA -->
+<section class="slide" data-section="Entender">
+  <div class="split">
+    <div>
+      <h2>La memoria es una ilusión útil.</h2>
+      <p class="lede">Recuerda porque tu app reenvía todo el historial en cada llamada.</p>
+    </div>
+    <div>
+      <div class="code">messages: [
+  { role: <span class="s">"user"</span>,      text: <span class="s">"Hola"</span> },
+  { role: <span class="s">"assistant"</span>, text: <span class="s">"¿Qué necesitas?"</span> },
+  { role: <span class="s">"user"</span>,      text: <span class="s">"Consulta mi catálogo"</span> }
+]</div>
+      <p class="note">El modelo recibe todo, en cada llamada.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 8 BUCLE -->
+<section class="slide" data-section="Entender">
+  <div class="split">
+    <div>
+      <h2>Un agente es un bucle.</h2>
+      <p class="lede">Tu código rodea al modelo y decide cuándo parar.</p>
+    </div>
+    <div class="loopwrap">
+      <svg class="loop" id="loopSvg" viewBox="0 0 520 540" role="img" aria-label="Bucle circular: llamar, leer, ejecutar, reinyectar, y repetir hasta terminar">
+        <circle class="track" cx="260" cy="270" r="170"/>
+        <g class="stage" style="animation-delay:0s"><circle cx="260" cy="100" r="9"/><text x="260" y="66" text-anchor="middle">llamar</text></g>
+        <g class="stage" style="animation-delay:-6s"><circle cx="430" cy="270" r="9"/><text x="454" y="280" text-anchor="start">leer</text></g>
+        <g class="stage" style="animation-delay:-4s"><circle cx="260" cy="440" r="9"/><text x="260" y="490" text-anchor="middle">ejecutar</text></g>
+        <g class="stage" style="animation-delay:-2s"><circle cx="90" cy="270" r="9"/><text x="66" y="280" text-anchor="end">reinyectar</text></g>
+        <text class="center" x="260" y="262">repetir</text>
+        <text class="center" x="260" y="292">hasta terminar</text>
+        <circle class="halo" r="20"><animateMotion dur="8s" repeatCount="indefinite" path="M260 100 A170 170 0 0 1 260 440 A170 170 0 0 1 260 100"/></circle>
+        <circle class="dot" r="9"><animateMotion dur="8s" repeatCount="indefinite" path="M260 100 A170 170 0 0 1 260 440 A170 170 0 0 1 260 100"/></circle>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- 9 SOLO PIDE -->
+<section class="slide stack" data-section="Entender">
+  <h2 class="m">El modelo solo pide. No ejecuta.</h2>
+  <div class="body">
+    <svg class="seq" viewBox="0 0 900 400" preserveAspectRatio="xMinYMin meet" role="img" aria-label="El modelo pide, tu código ejecuta, devuelves los datos, el modelo redacta">
+      <defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs>
+      <rect class="zone" x="650" y="0" width="250" height="400"/>
+      <text class="head" x="150" y="32" text-anchor="middle">El modelo</text>
+      <text class="head" x="760" y="32" text-anchor="middle">Tu backend</text>
+      <line class="life" x1="150" y1="52" x2="150" y2="400"/>
+      <line class="life" x1="760" y1="52" x2="760" y2="400"/>
+
+      <text class="t" x="455" y="98" text-anchor="middle">1. Pide</text>
+      <text class="m" x="455" y="122" text-anchor="middle">tool call: list_products</text>
+      <line class="ar" x1="156" y1="136" x2="752" y2="136"/>
+
+      <rect class="act" x="750" y="168" width="20" height="56"/>
+      <text class="t" x="730" y="192" text-anchor="end">2. Ejecutas</text>
+      <text class="m" x="730" y="214" text-anchor="end">tu código llama a la API</text>
+
+      <text class="t" x="455" y="270" text-anchor="middle">3. Devuelves</text>
+      <text class="m" x="455" y="294" text-anchor="middle">los datos, como JSON</text>
+      <line class="ar" x1="754" y1="308" x2="158" y2="308"/>
+
+      <rect class="act" x="140" y="340" width="20" height="56"/>
+      <text class="t" x="180" y="364">4. Redacta</text>
+      <text class="m" x="180" y="386">la respuesta en lenguaje natural</text>
+    </svg>
+    <p class="note" style="margin-top:20px">La seguridad vive en tu backend, no en el prompt.</p>
+  </div>
+</section>
+
+<!-- 10 HERRAMIENTAS -->
+<section class="slide" data-section="Entender">
+  <div class="split">
+    <div>
+      <h2>Le describes tus herramientas.</h2>
+      <p class="lede">Cada función es un contrato: nombre, propósito y parámetros.</p>
+    </div>
+    <div>
+      <div class="code">{
+  <span class="k">"name"</span>: <span class="s">"list_products"</span>,
+  <span class="k">"description"</span>: <span class="s">"Consulta el catálogo"</span>,
+  <span class="k">"parameters"</span>: {
+    <span class="k">"sort_by"</span>: <span class="s">"price"</span>,
+    <span class="k">"order"</span>: <span class="s">"desc"</span>,
+    <span class="k">"limit"</span>: 1
+  }
+}</div>
+      <p class="note">El modelo no ve tu función. Ve esta descripción.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 11 MANTRA -->
+<section class="slide" data-section="Entender" data-theme="blue">
+  <div class="hero" style="font-weight:800;font-size:clamp(48px,11vw,180px)">
+    <span class="ln"><span style="--k:0;font-weight:300">El modelo propone,</span></span>
+    <span class="ln"><span style="--k:5">tu código ejecuta.</span></span>
+  </div>
+</section>
+
+<!-- 12 EJEMPLO COMPLETO -->
+<section class="slide stack" data-section="Entender">
+  <h2>Un ejemplo completo.</h2>
+  <div class="body log">
+    <div><span class="who">Usuario</span><span class="tx">¿Lloverá?</span></div>
+    <div><span class="who">Modelo</span><span class="tx">pide <code>consultar_clima()</code></span></div>
+    <div><span class="who">Tu código</span><span class="tx">hace un fetch real a la <code>API del clima</code></span></div>
+    <div class="final"><span class="who">Modelo</span><span class="tx accent">Lleva paraguas.</span></div>
+  </div>
+</section>
+
+<!-- 13 API KEY -->
+<section class="slide" data-section="API key">
+  <div class="split">
+    <div>
+      <h2>Crea tu API key gratis.</h2>
+      <div class="url">aistudio.google.com/apikey</div>
+    </div>
+    <ol class="rows">
+      <li><span class="n">1</span><div><b>Entra en AI Studio</b><span class="d">Con tu cuenta de Google</span></div></li>
+      <li><span class="n">2</span><div><b>Crea una API key</b><span class="d">En Google AI Studio, sección API keys</span></div></li>
+      <li><span class="n">3</span><div><b>Guárdala como secreto</b><span class="d">En tu backend, nunca en git</span></div></li>
+    </ol>
+  </div>
+</section>
+
+<!-- 14 DÓNDE VIVE LA KEY -->
+<section class="slide stack" data-section="API key">
+  <h2 class="m">¿Dónde vive tu API key?</h2>
+  <p class="lede" style="margin-top:18px">Trátala como una contraseña.</p>
+  <div class="body where">
+    <div class="yes"><span class="w">Backend</span><span class="st">Sí</span></div>
+    <div class="no"><span class="w">Frontend</span><span class="st">No</span></div>
+    <div class="never"><span class="w">Repositorio</span><span class="st">Nunca</span></div>
+  </div>
+  <p class="note mono" style="margin-top:22px;font-size:clamp(12px,1.2vw,15px)">GEMINI_API_KEY=...   en tu archivo .env</p>
+</section>
+
+<!-- 15 DEMO CHAT -->
+<section class="slide" data-section="Demo">
+  <div class="split">
+    <div>
+      <h2 class="m">Un chat que conversa con un catálogo real.</h2>
+      <p class="lede" style="margin-top:20px">Probá una consulta. El agente llama a la API y arma la respuesta.</p>
+      <div class="asks" id="chatChips"></div>
+    </div>
+    <div class="chat">
+      <div class="chat-head">Agente de catálogo <span>GET /api/v1/products</span></div>
+      <div class="chat-body" id="chatBody"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 16 ARQUITECTURA -->
+<section class="slide stack" data-section="Demo">
+  <h2 class="m">Cada frontera, una responsabilidad.</h2>
+  <div class="body stair">
+    <div class="band b0" style="--i:0"><b>Navegador</b><span class="tech">React</span><p>Pinta la conversación y pide las confirmaciones.</p></div>
+    <div class="band b1" style="--i:1"><b>Backend</b><span class="tech">Express</span><p>Guarda la API key y ejecuta el bucle del agente.</p></div>
+    <div class="band b2" style="--i:2"><b>Modelo</b><span class="tech">Gemini</span><p>Propone qué herramienta llamar y redacta la respuesta.</p></div>
+    <div class="band b3" style="--i:3"><b>Tu API</b><span class="tech">FastAPI + Supabase</span><p>Es la dueña de los datos y de sus reglas.</p></div>
+  </div>
+</section>
+
+<!-- 17 ENDPOINTS → HERRAMIENTAS -->
+<section class="slide stack" data-section="Demo">
+  <h2 class="m">De endpoints a herramientas.</h2>
+  <div class="body map">
+    <div>
+      <div class="code">GET /api/v1/products</div>
+      <div class="arr"></div>
+      <div class="tool">list_products<small>Lee datos y responde directo</small></div>
+    </div>
+    <div>
+      <div class="code">POST /api/v1/products</div>
+      <div class="arr"></div>
+      <div class="tool">create_product<small>Escribe datos y pide confirmación</small></div>
+    </div>
+  </div>
+  <p class="note">Un JSON (endpoints.json) se vuelve las tools del modelo.</p>
+</section>
+
+<!-- 18 PREGUNTA COMO HABLAS -->
+<section class="slide stack" data-section="Demo">
+  <h2 class="m">Pregunta como hablas.</h2>
+  <p class="lede" style="margin-top:18px">El agente traduce intención en parámetros.</p>
+  <div class="body speak">
+    <div>
+      <div class="ph"><mark class="m1">Top 10</mark> <mark class="m2">más baratos</mark></div>
+      <div class="pm"><mark class="m1">limit=10</mark><mark class="m2">sort_by=price</mark><mark class="m2">order=asc</mark></div>
+    </div>
+    <div>
+      <div class="ph">Stock <mark class="m1">menor a 5</mark></div>
+      <div class="pm"><mark class="m1">max_stock=4</mark></div>
+    </div>
+    <div>
+      <div class="ph">Buscá <mark class="m1">mouse</mark></div>
+      <div class="pm"><mark class="m1">name_contains=mouse</mark></div>
+    </div>
+  </div>
+</section>
+
+<!-- 19 CONFIRMACIÓN -->
+<section class="slide" data-section="Demo">
+  <div class="split">
+    <div>
+      <h2>Antes de escribir, confirma.</h2>
+      <p class="lede">Las acciones con efecto necesitan consentimiento visible.</p>
+    </div>
+    <div class="dialog" id="dialog">
+      <h3>Crear nuevo producto</h3>
+      <dl><dt>Nombre</dt><dd>ventilador</dd><dt>Precio</dt><dd>500</dd><dt>Stock</dt><dd>30</dd></dl>
+      <div class="acts">
+        <button class="cancel" id="dCancel">Cancelar</button>
+        <button class="ok" id="dOk">Confirmar</button>
+      </div>
+      <div class="res" id="dRes" aria-live="polite"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 20 TABLA -->
+<section class="slide stack" data-section="Demo">
+  <h2 class="m">La tabla también es una herramienta.</h2>
+  <p class="lede" style="margin-top:18px">El modelo elige parámetros. Tu código aplica el resultado.</p>
+  <div class="body tbl">
+    <div class="q">"Ordena por precio y muestra 10"</div>
+    <table>
+      <tr><th>#</th><th>Producto</th><th>Precio</th><th>Stock</th></tr>
+      <tr><td>1</td><td>tarjeta grafica</td><td>3000</td><td>5</td></tr>
+      <tr><td>2</td><td>ventilador</td><td>500</td><td>30</td></tr>
+      <tr><td>3</td><td>mouse pad</td><td>200</td><td>10</td></tr>
+    </table>
+    <p class="note" style="margin-top:18px">La tabla y el texto salen del mismo subconjunto.</p>
+  </div>
+</section>
+
+<!-- 21 ROBUSTEZ -->
+<section class="slide stack" data-section="Inspiración">
+  <h2 class="m" style="max-width:15em">Confía en el modelo para proponer, no para autorizar.</h2>
+  <div class="body cols c3">
+    <div><h3>Validación</h3><p>Valida en el servidor los argumentos y los tipos (Zod).</p></div>
+    <div><h3>Límites</h3><p>Rate limit: 10 consultas y 5 escrituras por minuto.</p></div>
+    <div><h3>Defensa</h3><p>Los datos de la API son datos, no instrucciones.</p></div>
+  </div>
+</section>
+
+<!-- 22 CIERRE -->
+<section class="slide" data-section="Inspiración" data-theme="ink">
+  <div class="hero">
+    <span class="ln"><span style="--k:0">Un agente es</span></span>
+    <span class="ln"><span style="--k:1"><b class="accent">tu código</b></span></span>
+    <span class="ln"><span style="--k:2">+ un modelo.</span></span>
+  </div>
+  <p class="lede" style="max-width:26em">La parte difícil, tu API, ya la tienes. Empieza pequeño: una tool, una validación, una experiencia útil.</p>
+  <div class="closing-url">aistudio.google.com/apikey</div>
+</section>
+
+</main>
+
+<script>
+/* ===== NAVEGACIÓN ===== */
+const slides=[...document.querySelectorAll('.slide')];
+const bar=document.getElementById('bar');
+const counter=document.getElementById('counter');
+const secEl=document.getElementById('sec');
+let i=0;
+function go(n,skipHash){
+  i=Math.max(0,Math.min(slides.length-1,n));
+  slides.forEach((s,idx)=>{
+    s.classList.toggle('active',idx===i);
+    s.setAttribute('aria-hidden',idx===i?'false':'true');
+  });
+  const cur=slides[i];
+  document.body.dataset.theme=cur.dataset.theme||'paper';
+  document.body.classList.toggle('is-cover',i===0);
+  secEl.textContent=cur.dataset.section||'';
+  bar.style.width=((i+1)/slides.length*100)+'%';
+  counter.textContent=(i+1)+' / '+slides.length;
+  cur.scrollTop=0;
+  if(!skipHash){try{history.replaceState(null,'','#'+(i+1))}catch(e){}}
+}
+document.getElementById('next').onclick=()=>go(i+1);
+document.getElementById('prev').onclick=()=>go(i-1);
+document.addEventListener('keydown',e=>{
+  if(e.target.closest&&e.target.closest('button')&&(e.key===' '||e.key==='Enter'))return;
+  if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(i+1)}
+  else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(i-1)}
+  else if(e.key==='Home'){go(0)}
+  else if(e.key==='End'){go(slides.length-1)}
+});
+let tx=null;
+document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX},{passive:true});
+document.addEventListener('touchend',e=>{
+  if(tx===null)return;
+  const dx=e.changedTouches[0].clientX-tx;tx=null;
+  if(Math.abs(dx)>60){go(i+(dx<0?1:-1))}
+},{passive:true});
+const start=parseInt((location.hash||'').slice(1),10);
+go(isNaN(start)?0:start-1,true);
+
+if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+  const l=document.getElementById('loopSvg');
+  if(l&&l.pauseAnimations)l.pauseAnimations();
+}
+
+/* ===== CHAT INTERACTIVO ===== */
+const DEMO=[
+  {q:"¿Cuál es el más caro?",trace:"list_products(sort_by=price, order=desc, limit=1)",a:"El más caro es <b>tarjeta grafica</b>: precio 3000, stock 5.",
+   table:{cols:["Producto","Precio","Stock"],rows:[["tarjeta grafica","3000","5"]]}},
+  {q:"Top 3 más baratos",trace:"list_products(sort_by=price, order=asc, limit=3)",a:"Ranking de los 3 más baratos:",
+   table:{cols:["#","Producto","Precio"],rows:[["1","Prueba Agente Demo","1"],["2","mouse pad","200"],["3","ventilador","500"]]}},
+  {q:"Stock menor a 5",trace:"list_products(max_stock=4)",a:"Productos con stock menor a 5:",
+   table:{cols:["Producto","Stock","Precio"],rows:[["Prueba Agente Demo","1","1"],["tarjeta grafica","5","3000"]]}},
+  {q:"Buscá mouse",trace:"list_products(name_contains=mouse)",a:"Coincidencias para “mouse”:",
+   table:{cols:["#","Producto","Precio","Stock"],rows:[["24","mouse pad","200","10"],["25","mouse pad","200","10"]]}}
+];
+const body=document.getElementById('chatBody');
+const chips=document.getElementById('chatChips');
+DEMO.forEach((d,idx)=>{
+  const b=document.createElement('button');
+  b.type='button';b.textContent=d.q;
+  b.onclick=()=>run(idx);
+  chips.appendChild(b);
+});
+function tableHTML(t){
+  return '<table><tr>'+t.cols.map(c=>'<th>'+c+'</th>').join('')+'</tr>'+
+    t.rows.map(r=>'<tr>'+r.map(c=>'<td>'+c+'</td>').join('')+'</tr>').join('')+'</table>';
+}
+function run(idx){
+  const d=DEMO[idx];
+  const all=[...chips.children];
+  all.forEach(c=>c.disabled=true);
+  body.insertAdjacentHTML('beforeend','<div class="msg user">'+d.q+'</div>');
+  const t=document.createElement('div');t.className='typing';
+  t.innerHTML='<i></i><i></i><i></i>';
+  body.appendChild(t);body.scrollTop=body.scrollHeight;
+  setTimeout(()=>{
+    t.remove();
+    body.insertAdjacentHTML('beforeend','<div class="msg ai"><span class="trace">'+d.trace+'</span>'+d.a+tableHTML(d.table)+'</div>');
+    body.scrollTop=body.scrollHeight;
+    all.forEach(c=>c.disabled=false);
+  },700);
+}
+run(0);
+
+/* ===== DIÁLOGO DE CONFIRMACIÓN ===== */
+const dRes=document.getElementById('dRes');
+document.getElementById('dOk').onclick=()=>{dRes.textContent='create_product enviado a la API'};
+document.getElementById('dCancel').onclick=()=>{dRes.textContent='Cancelado: no se escribió nada'};
+</script>
+</body>
+</html>
